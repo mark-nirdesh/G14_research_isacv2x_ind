@@ -11,27 +11,7 @@
 
 > **Loom progress video:** _Add the Loom embed URL or public video link below._
 
-<!-- Replace `YOUR_LOOM_EMBED_URL` with the Loom embed URL, for example: https://www.loom.com/embed/VIDEO_ID -->
-
-```html
-<iframe
-  src="YOUR_LOOM_EMBED_URL"
-  frameborder="0"
-  webkitallowfullscreen
-  mozallowfullscreen
-  allowfullscreen
-  style="width: 100%; max-width: 900px; height: 506px; border-radius: 8px;"
-  title="RF-Only 5.9 GHz V2X-Inspired ISAC Project Progress">
-</iframe>
-```
-
-If the repository viewer does not render the iframe, add a normal Loom link here:
-
-```text
-https://www.loom.com/share/YOUR_VIDEO_ID](https://www.loom.com/share/ca03f628b9004216a871881f3888bf60
-```
-
----
+<div style="position: relative; padding-bottom: 56.25%; height: 0;"><iframe src="https://www.loom.com/embed/ca03f628b9004216a871881f3888bf60" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe></div>
 
 ## Overview
 
