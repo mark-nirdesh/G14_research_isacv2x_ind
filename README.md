@@ -53,7 +53,6 @@ A camera may be used **only to produce offline ground truth**; camera data are n
 
 ## Experimental model
 
-> To display the diagram, place the separately provided `V2X_ISAC_experiment_model_diagram.svg` file in the `assets/` folder.
 
 ![Proposed single-RSU V2X-inspired ISAC experiment](assets/V2X_ISAC_experiment_model_diagram.svg)
 
