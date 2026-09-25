@@ -3,244 +3,239 @@
 > **M1 research repository — Team `g14_research_isacv2x_ind`**  
 > **Target paper submission:** 18 November 2026
 
-[![Status](https://img.shields.io/badge/status-M1%20proposal-blue)](#project-status)
-[![Scope](https://img.shields.io/badge/scope-RF--only%20ISAC-0b7a75)](#scope-and-claim-boundaries)
-[![Hardware](https://img.shields.io/badge/hardware-USRP%20B210-ef8b2c)](#hardware-roles)
-
 ## Project video
 
-> **Loom progress video:** _Add the Loom embed URL or public video link below._
+▶️ **[Watch our two-minute progress video on Loom](https://www.loom.com/embed/ca03f628b9004216a871881f3888bf60)**
 
+GitHub README pages do not display Loom iframe players. The link above is the GitHub-friendly way to watch the video. For a webpage that supports iframe embeds, the original embed code is preserved below:
+
+<details>
+<summary>Show original Loom iframe code</summary>
+
+```html
 <div style="position: relative; padding-bottom: 56.25%; height: 0;"><iframe src="https://www.loom.com/embed/ca03f628b9004216a871881f3888bf60" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe></div>
+```
+
+</details>
+
+---
 
 ## Overview
 
-This project investigates a focused question in roadside **Integrated Sensing and Communication (ISAC)**:
+We investigate a specific question in roadside **integrated sensing and communication (ISAC)**:
 
-> Can a low-power roadside SDR, designed as a prototype for a future ETSI-oriented RSU, use a 5.9 GHz OFDM signal to detect a moving object despite interference from its own transmitter and reflections from stationary surroundings? At the same time, how reliably can an independent receiver decode the data carried by that signal?
+> Can a low-power roadside SDR, designed as a prototype for a future ETSI-oriented RSU, use a 5.9 GHz OFDM signal to detect a moving object despite interference from its own transmitter and reflections from stationary surroundings? At the same time, how reliably can a separate receiver decode the data carried by that signal?
 
-The first experiment is intentionally **RF-only**. It does not use camera input, lidar input, automotive radar point clouds, or a trained camera–radar fusion model. We transmit a custom OFDM waveform, record the reflected radio signal, suppress direct-path leakage and static clutter, and estimate moving-target evidence from delay–Doppler processing.
+Our initial system is **RF-only**. It uses a USRP B210 as the roadside sensing node and a second USRP B210 as an independent communication receiver. We have six B210s available, but multi-RSU sensing is reserved for future work. We use a custom **V2X/ITS-G5-parameter-inspired OFDM waveform**, not a claimed fully compliant ETSI ITS-G5 or 3GPP PC5 protocol implementation.
 
-The work is framed as **6G-oriented V2X ISAC research**. It does **not** claim that the initial waveform is a compliant 3GPP PC5 implementation, a certified ETSI ITS-G5 stack, or a commercial RSU product.
-
----
+At M1, the research question, system model, related-work position, and experiment plan are defined. **Experimental target-detection performance has not yet been established.**
 
 ## Research boundary
 
-### What this work studies
+### What we are studying
 
-- A low-power, stationary, 5.9 GHz roadside sensing site.
-- A custom **V2X/ITS-G5-parameter-inspired OFDM waveform** with communication payload and known pilot/training symbols.
-- A moving non-cooperative target, initially a corner reflector, vehicle, bicycle, or controlled moving reflector.
-- Direct TX-to-RX leakage, static clutter, weak target reflections, and receiver saturation risk.
-- Moving-target detection, Doppler sign, radial-velocity estimation, and coarse range **only if experimentally resolvable**.
-- Communication packet reception at an independent SDR receiver.
-- A measured sensing-versus-communication trade-off only when a real waveform/resource parameter is varied.
+- A stationary, low-power, 5.9 GHz roadside sensing site.
+- OFDM packets carrying data and known reference/training symbols.
+- Direct TX-to-RX leakage, static roadside clutter, and weak moving-target echoes.
+- Target presence, approach/recede decision, and radial velocity.
+- Coarse range only if a reflected delay component can be reliably separated and calibrated.
+- Independent packet reception and communication metrics from the same transmitted waveform.
 
-### What this first paper does not claim
+### What we do not claim in the first paper
 
-- Full ETSI ITS-G5, LTE-V2X, or NR-V2X PC5 compliance.
-- High-resolution automotive radar, imaging radar, dense depth estimation, or 3D scene reconstruction.
-- Camera–radar fusion, object classification, or semantic perception.
-- Precise angle-of-arrival estimation.
-- Multi-RSU distributed sensing results.
-- A maximum sensing range before it is experimentally measured.
-- Permission to transmit at 5.9 GHz without applicable institutional and regulatory authorization.
+- Certified ETSI ITS-G5 or 3GPP PC5 sidelink implementation.
+- Automotive-radar-grade ranging, imaging, or 3D scene reconstruction.
+- Camera–radar fusion or object-class recognition.
+- Precise angle estimation or multi-RSU localization.
+- Any target-detection distance or detection probability before measurements exist.
 
----
-
-## Why this problem matters
-
-ISAC aims to reuse wireless spectrum, waveform resources, RF hardware, and baseband processing for both communication and environmental sensing. Existing work has studied this concept analytically and in large cellular-network demonstrations. However, the experimentally achievable sensing capability of a **single, low-power, roadside SDR** using a V2X-like waveform remains a practical question.
-
-This work does not attempt to reproduce Ericsson's distributed, multi-site cellular ISAC system. Instead, it studies a smaller and reproducible operating point: **one roadside sensing RSU site with constrained power, limited bandwidth, direct-path leakage, and a real independent communication receiver**.
-
----
+A camera may be used **only to produce offline ground truth**; camera data are not an input to the RF detector.
 
 ## Experimental model
 
-![Single-RSU V2X-inspired ISAC experiment](assets/V2X_ISAC_experiment_model_diagram.svg)
+> To display the diagram, place the separately provided `V2X_ISAC_experiment_model_diagram.svg` file in the `assets/` folder.
 
-### Signal paths
+![Proposed single-RSU V2X-inspired ISAC experiment](assets/V2X_ISAC_experiment_model_diagram.svg)
 
 ```text
-                     Same 5.9 GHz OFDM waveform
-
-      ┌────────────────────────────────────────────────────────────┐
-      │                                                            ▼
-┌───────────────┐                                            ┌───────────────┐
-│ B210 #1       │                                            │ B210 #2       │
-│ Roadside RSU  │──────── communication payload ───────────► │ Independent   │
-│ TX + Echo RX  │                                            │ packet RX     │
-└───────┬───────┘                                            └───────────────┘
-        │
-        │ transmitted waveform
-        ▼
-┌─────────────────────┐
-│ Moving target       │
-│ vehicle / reflector │
-└──────────┬──────────┘
-           │ weak reflected echo: delay τ and Doppler f_D
-           ▼
-┌────────────────────────────────────────────────────────────────┐
-│ B210 #1 sensing receive path                                    │
-│ direct leakage + static clutter + target echo + noise            │
-└────────────────────────────┬───────────────────────────────────┘
-                             ▼
-        IQ synchronization → channel estimation → background removal
-                             ▼
-                delay–Doppler map → threshold / CFAR detector
-                             ▼
-        target presence + Doppler sign + radial velocity (+ range if valid)
+                          ONE TRANSMITTED OFDM WAVEFORM
+                                      │
+                  ┌───────────────────┴───────────────────┐
+                  ▼                                       ▼
+        Moving roadside target                   USRP B210 #2
+          reflected echo                    independent packet RX
+                  │                                       │
+                  ▼                                       ▼
+USRP B210 #1: transmit + sensing RX                  PER / goodput
+         │
+         ├── direct TX→RX leakage
+         ├── stationary roadside clutter
+         ├── weak moving-target echo
+         └── receiver noise
+                  │
+                  ▼
+  IQ sync → channel estimation → clutter/leakage reduction
+                  │
+                  ▼
+     delay–Doppler map → detector → target and motion estimates
 ```
 
 ### Hardware roles
 
-| Device | Planned role in the first paper | Notes |
+| SDR | Role | First-paper status |
 |---|---|---|
-| **USRP B210 #1** | Single stationary roadside sensing RSU | One TX path emits OFDM packets; one RX path records echoes. Separate TX/RX antennas are used to improve isolation. |
-| **USRP B210 #2** | Independent communication receiver | Decodes the OFDM payload and logs packet reception, PER, goodput, and received-SNR proxies. |
-| **USRP B210 #3** | Optional reference / cross-check receiver | Used only if a direct-path reference measurement is needed. It is not treated as a second sensing RSU in Phase 1. |
-| **USRP B210 #4–#6** | Future extension / backup hardware | Reserved for later synchronized multi-RSU or distributed-sensing experiments. |
+| B210 #1 | Single roadside sensing RSU; transmits OFDM data and receives echoes with separate TX/RX antennas. | Core setup |
+| B210 #2 | Independent communication receiver for decoding the same transmitted packets. | Core setup |
+| B210 #3 | Optional direct-path/reference receiver if required for diagnostics. | Optional |
+| B210 #4–#6 | Spares or later synchronized multi-RSU work. | Outside the first paper |
 
----
+"Single RSU" means **one sensing site**, not that the lab has only one SDR.
 
-## Signal model
+## Mathematical signal model
 
-Let `X[m,n]` be the known transmitted OFDM symbol at OFDM time index `m` and subcarrier index `n`. A first-order received frequency-domain model is:
+Let $X[m,n]$ be the known OFDM symbol at OFDM time index $m$ and subcarrier index $n$. The first-order receive model is:
 
-\[
-Y[m,n] = X[m,n] \Big(H_{\mathrm{leak}}[m,n] + H_{\mathrm{static}}[m,n]
-+ \alpha e^{-j2\pi n\Delta f\tau} e^{j2\pi mT_{\mathrm{sym}}f_D}\Big) + W[m,n].
-\]
+$$
+Y[m,n] = X[m,n]\left(
+H_{\mathrm{leak}}[m,n] + H_{\mathrm{static}}[m,n]
++ \alpha e^{-j2\pi n\Delta f\tau}
+  e^{j2\pi mT_{\mathrm{sym}}f_D}
+\right) + W[m,n].
+$$
 
-where:
+Here $H_{\mathrm{leak}}$ is direct transmitter-to-receiver leakage; $H_{\mathrm{static}}$ represents static clutter; $\alpha$ is complex target reflectivity; $\tau$ is round-trip propagation delay; $f_D$ is Doppler frequency; and $W$ includes noise and residual interference. This is an initial model: the experiment must determine whether synchronization error, receiver clipping, phase noise, and multipath limit its usefulness.
 
-| Term | Meaning |
-|---|---|
-| `H_leak[m,n]` | Direct transmit-to-receive leakage / self-interference. |
-| `H_static[m,n]` | Repeatable stationary clutter from roadside objects and environment. |
-| `α` | Complex target reflection coefficient. |
-| `τ` | Round-trip propagation delay. |
-| `f_D` | Doppler frequency. |
-| `W[m,n]` | Residual noise, interference, phase noise, and modelling error. |
+We estimate the channel on known transmitted symbols:
 
-The channel estimate is formed from known transmitted symbols:
+$$
+\widehat{H}[m,n] = \frac{Y[m,n]}{X[m,n]},
+\qquad X[m,n] \neq 0.
+$$
 
-\[
-\widehat{H}[m,n] = \frac{Y[m,n]}{X[m,n]}.
-\]
+After suppressing repeatable leakage and static components, we form a delay–Doppler map. For a monostatic sensing geometry:
 
-After reference/background subtraction, a delay–Doppler map is generated to detect moving-target components.
-
-For monostatic sensing:
-
-\[
+$$
 \widehat{R} = \frac{c\widehat{\tau}}{2},
 \qquad
-\widehat{v}_r = \frac{\lambda\widehat{f}_D}{2},
+\widehat{v}_{r} = \frac{\lambda\widehat{f}_{D}}{2},
 \qquad
 \lambda = \frac{c}{f_c},
-\qquad
-f_c \approx 5.9\ \text{GHz}.
-\]
+\qquad f_c \approx 5.9\,\mathrm{GHz}.
+$$
 
-The nominal resolution limits are:
+The approximate nominal resolution limits are:
 
-\[
+$$
 \Delta R \approx \frac{c}{2B_{\mathrm{occ}}},
 \qquad
-\Delta v_r \approx \frac{\lambda}{2T_{\mathrm{coh}}}.
-\]
+\Delta v_{r} \approx \frac{\lambda}{2T_{\mathrm{coh}}}.
+$$
 
-For example, an occupied bandwidth of 10 MHz has nominal range resolution near 15 m. Therefore, the initial emphasis is on **moving-target presence and radial velocity**, not high-resolution ranging or imaging.
+Here $B_{\mathrm{occ}}$ is **occupied sensing bandwidth**, not simply the nominal channel width, and $T_{\mathrm{coh}}$ is the effective coherent observation time. A waveform with 10 MHz **occupied** bandwidth has a nominal two-target range-resolution scale of about 15 m. That does not automatically mean every isolated-target range estimate has 15 m error, but it does rule out an unsupported high-resolution imaging claim.
 
----
+The approximate monostatic echo-power trend is:
+
+$$
+P_{\mathrm{echo}} \approx
+\frac{P_tG_tG_r\lambda^2\sigma}{(4\pi)^3R^4L}.
+$$
+
+This model motivates controlled short-range trials, careful antenna isolation, and explicit measurement of receiver headroom rather than an assumed sensing distance.
 
 ## Testable hypothesis
 
-> After avoiding receiver saturation and suppressing repeatable direct-path leakage and static clutter, a moving high-reflectivity target will produce a detectable Doppler component at a controlled false-alarm rate, while B210 #2 independently decodes the OFDM payload.
+> After avoiding receiver saturation and suppressing repeatable TX leakage and static clutter, a moving high-reflectivity target will produce a detectable Doppler component at a controlled false-alarm rate, while B210 #2 independently decodes the OFDM payload.
 
-If the experiment does not support this hypothesis, the project will report the measured operating limit and failure mode rather than claim target detection without evidence.
-
----
+If the measurements do not support that statement, we will report the observed operating limit and failure mode instead of claiming a successful detector.
 
 ## Measurement methodology
 
-1. **Cabled and attenuated validation**
-   - Validate OFDM generation, IQ capture, timing, packet decoding, and receiver headroom.
-   - Confirm that transmit leakage does not saturate the sensing receiver.
+1. **Cabled/attenuated baseline:** Verify the OFDM waveform, sample timing, packet decoder, and safe receive power before OTA trials.
+2. **Empty-scene capture:** Measure direct-path leakage and stationary background with no moving target present.
+3. **Controlled target trials:** Repeat target-present and target-absent experiments on a marked path; start with a high-reflectivity controlled target.
+4. **Signal processing:** Compare raw processing, empty-scene subtraction, and subtraction plus a fixed threshold or CFAR-style detector.
+5. **Communication validation:** Use B210 #2 to count successfully received packets and payload bits from the same waveform.
+6. **External ground truth:** Use marked distances, a speed reference, or video solely to validate the RF estimates.
 
-2. **Empty-scene measurement**
-   - Record direct-path leakage and static clutter with no moving target.
-   - Construct a reference/background estimate.
-
-3. **Controlled moving-target trials**
-   - Collect repeated target-present and target-absent captures.
-   - Begin with a corner reflector or controlled moving reflector.
-   - Progress to a vehicle/bicycle only after the basic measurement chain is validated.
-
-4. **RF sensing processing**
-   - Estimate the OFDM channel using known training/pilot symbols.
-   - Compare raw processing, empty-scene subtraction, and threshold/CFAR-style detection.
-   - Estimate target Doppler sign and radial velocity.
-
-5. **Independent communication measurement**
-   - Use B210 #2 to measure packet reception using the same transmitted waveform.
-   - Log packet error rate, successfully received payload bits, and receiver SNR/RSSI proxies.
-
-6. **Ground-truth validation**
-   - Use marked distances, a known target path, speed reference, or video only for offline validation.
-   - Do not use camera output as an input to the sensing detector.
-
----
+One statistical trial will be a predefined observation window and a predefined detector decision; adjacent FFT frames from one pass are not counted as independent trials without justification.
 
 ## Evaluation metrics
 
-| Category | Metric | Definition / interpretation |
-|---|---|---|
-| Target detection | Detection probability | \(\widehat{P}_D = N_{\text{detected} \mid \text{target}} / N_{\text{target-present}}\) |
-| False alarms | False-alarm probability | \(\widehat{P}_{FA} = N_{\text{detected} \mid \text{empty}} / N_{\text{target-absent}}\) |
-| Doppler / motion | Radial-velocity RMSE | \(\mathrm{RMSE}_v = \sqrt{\frac{1}{K}\sum_{k=1}^{K}(\widehat v_{r,k}-v_{r,k})^2}\) |
-| Range | Range error | Reported only when a target delay peak is demonstrably separable from leakage/clutter. |
-| Communication | Packet error rate | \(\mathrm{PER}=N_{\text{failed packets}}/N_{\text{transmitted packets}}\) |
-| Communication | Goodput | Correctly received payload bits divided by observation time. |
-| RF health | Leakage, clipping, noise floor | Used to determine whether the sensing RX is physically usable. |
-| ISAC trade-off | Sensing versus payload/pilot configuration | Measured only when an actual waveform or resource parameter is varied. |
+For $N_1$ target-present trials, $N_0$ target-absent trials, and $K$ velocity-labeled detections:
 
----
+$$
+\widehat{P}_{D} =
+\frac{N_{\mathrm{detections\ in\ target\ trials}}}{N_1},
+\qquad
+\widehat{P}_{FA} =
+\frac{N_{\mathrm{detections\ in\ empty\ trials}}}{N_0}.
+$$
+
+$$
+\mathrm{RMSE}_{v} =
+\sqrt{\frac{1}{K}\sum_{k=1}^{K}
+\left(\widehat{v}_{r,k}-v_{r,k}\right)^2}.
+$$
+
+The independent communication receiver enables:
+
+$$
+\mathrm{PER} =
+\frac{N_{\mathrm{failed\ packets}}}{N_{\mathrm{transmitted\ packets}}},
+\qquad
+G =
+\frac{N_{\mathrm{correctly\ received\ payload\ bits}}}{T}.
+$$
+
+| Output | Planned evidence |
+|---|---|
+| Moving-target detection | Detection and false-alarm estimates at stated threshold/false-alarm setting; trial counts and uncertainty intervals. |
+| Doppler / radial velocity | Approach/recede sign, estimated velocity, and error against ground truth. |
+| Range | Delay/range error **only if** echo separation from leakage is demonstrably valid. |
+| Communication | Packet error rate and goodput at B210 #2. |
+| RF integrity | Receiver clipping check, leakage level, background behavior, and acquisition parameters. |
+| ISAC trade-off | A plot of sensing and communication metrics against an **actually varied** packet, pilot, or resource parameter, if implemented. |
+
+## Related work and our position
+
+| Reference | What it studies | Why our experiment is different |
+|---|---|---|
+| Decarli *et al.* (2024) | Analytical performance of sensing through beyond-5G NR-V2X sidelink. | We are testing a single low-power roadside SDR under measured leakage/clutter, using a clearly identified custom waveform. |
+| Li *et al.* (2025) | Resource allocation for NR-V2X joint communication and sensing in simulation. | We focus first on repeatable RF measurements and an independently measured communication link. |
+| Ericsson ISAC demonstration | Distributed cellular sensing of non-cooperative drones. | Our prototype uses one roadside sensing site, a V2X-like channel, and a constrained SDR setup. |
+| Singh *et al.* (2023); TacoDepth (2025) | Depth estimation with camera images and dedicated automotive radar point clouds. | Our model has no camera input and starts from SDR IQ and channel estimates, not radar point clouds. |
+
+This SOTA position is preliminary. We will re-check the literature for comparable 5.9 GHz single-site SDR demonstrations before claiming a unique contribution.
 
 ## Project status
 
-| Item | Status |
+| Component | M1 status |
 |---|---|
-| Research question and scope | Defined |
-| Related-work review and SOTA position | Initial review completed; ongoing refinement required |
-| Single-site experimental model | Designed |
-| Network / experiment diagram | Created |
+| Problem statement and scope | Defined |
+| Related-work review | Initial review completed; SOTA position remains open to refinement |
+| Signal model and planned evaluation | Defined |
+| Network/experiment diagram | Created |
 | OFDM waveform implementation | Planned |
-| Cabled timing and RX-headroom validation | Planned |
+| Cabled RX safety and packet test | Planned |
 | Leakage/clutter measurement | Planned |
-| Controlled moving-target dataset | Planned |
-| Target-detection results | Not yet claimed |
-| Multi-RSU distributed sensing | Future extension |
-
----
+| Moving-target IQ dataset | Planned |
+| Experimental detection and communication results | Not yet claimed |
+| Multi-RSU sensing | Future extension |
 
 ## Timeline
 
 | Period | Work | Expected evidence |
 |---|---|---|
-| **25 Sep – 2 Oct 2026** | Finalize waveform terminology, literature matrix, mathematical model, target protocol, permissions, and M1 GitHub package. | M1 source files, literature review matrix, network diagram, scope and safety checklist. |
-| **3 Oct – 16 Oct 2026** | Implement known-symbol OFDM TX, B210 #1 sensing IQ capture, B210 #2 packet receiver, and cabled timing tests. | Reproducible waveform scripts, independent receiver baseline, RX clipping check. |
-| **17 Oct – 30 Oct 2026** | Measure empty-scene leakage, optimize antenna isolation, and collect authorized target/no-target trials. | Timestamped IQ captures, experiment configuration logs, target-path ground truth. |
-| **31 Oct – 7 Nov 2026** | Process delay–Doppler maps; compare raw and cancelled detectors; calculate detection, false alarm, Doppler error, and PER. | Figures with trial counts, uncertainty intervals, and failure cases. |
-| **8 Nov – 17 Nov 2026** | Audit novelty claims; write, revise, and package code/configuration/results. | Complete manuscript and reproducibility package. |
+| **25 Sep – 2 Oct 2026** | Finalize waveform terminology, literature, mathematical model, permissions, and M1 GitHub package. | Proposal PDF/source, literature matrix, network diagram, experiment checklist. |
+| **3 Oct – 16 Oct 2026** | Implement known-symbol OFDM TX, B210 #1 IQ capture, B210 #2 packet receiver, and cabled tests. | Waveform scripts, independent receiver test, RX-headroom check. |
+| **17 Oct – 30 Oct 2026** | Characterize empty-scene leakage and collect authorized target/no-target trials. | Timestamped IQ, configuration logs, ground-truth trajectory. |
+| **31 Oct – 7 Nov 2026** | Compare detectors and calculate detection, false alarm, Doppler error, PER, and goodput. | Plots with trial counts, uncertainty intervals, and limitations. |
+| **8 Nov – 17 Nov 2026** | Validate novelty, write paper, and package reproducible evidence. | Manuscript and documented experiment configuration. |
 | **18 Nov 2026** | Submit paper. | Submission confirmation. |
 
----
+> The **M1 GitHub deadline** is separate from the 18 November paper deadline. Commit all required M1 components before the deadline specified by the course/team; no M1 date is assumed here.
 
-## Repository layout
+## Proposed repository layout
 
 ```text
 .
@@ -252,8 +247,7 @@ If the experiment does not support this hypothesis, the project will report the 
 │   ├── proposal.tex
 │   ├── literature-matrix.csv
 │   ├── experiment-plan.md
-│   ├── regulatory-and-risks.md
-│   └── README.md
+│   └── regulatory-and-risks.md
 ├── waveform/
 │   ├── tx_ofdm.py
 │   ├── rx_packet_decoder.py
@@ -265,59 +259,44 @@ If the experiment does not support this hypothesis, the project will report the 
 │   └── detector.py
 ├── experiments/
 │   ├── configs/
-│   ├── logs/
-│   └── ground_truth/
+│   └── logs/
 └── results/
     ├── figures/
     └── tables/
 ```
 
-> File names may change as implementation proceeds. Raw IQ data should not be committed if its size exceeds repository limits; store a manifest, acquisition metadata, and instructions for retrieving approved datasets instead.
+This layout is a **plan**, not a claim that all scripts or datasets already exist. Store large IQ captures outside GitHub if needed and provide acquisition metadata and access instructions.
 
----
+## Reproducibility and safe operation
 
-## Reproducibility notes
-
-The planned software stack is expected to include Python, GNU Radio and/or UHD, NumPy, SciPy, Matplotlib, and project-specific SDR control scripts. Exact versions, sample rates, gain values, OFDM parameters, antenna details, and experiment configuration files will be committed before reporting results.
-
-Example environment placeholder:
+Before reporting any experimental results, record software versions, occupied bandwidth, subcarrier map, sample rate, antenna separation, transmit/receive gains, target path, timestamping, and detector thresholds.
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
 pip install numpy scipy matplotlib pyyaml
-# Install UHD / GNU Radio using the operating-system-specific procedure.
+# UHD/GNU Radio must be installed and tested for the lab operating system.
 ```
 
-> Do not treat the command above as a complete USRP installation procedure. UHD/GNU Radio installation differs by operating system, driver version, and lab hardware setup.
+The above command is a Python environment placeholder, **not** a complete USRP installation procedure.
 
----
+This repository does not authorize over-the-air transmission. Before using 5.9 GHz in a roadside or campus setting, verify applicable institutional and Indian DoT/WPC requirements for the selected band, emissions, EIRP, duty cycle, and deployment. Start with cabled/attenuated or otherwise approved shielded testing.
 
-## Safety and spectrum note
-
-This repository does not grant permission to transmit. Before over-the-air operation, verify applicable institutional safety requirements and current DoT/WPC rules for the selected center frequency, bandwidth, EIRP, duty cycle, antenna configuration, and roadside/RSU deployment. Until authorization is confirmed, use attenuated cabled tests, dummy loads, shielded setups, or other approved methods.
-
----
-
-## Related work
+## References
 
 1. Ericsson, [Drone detection with ISAC for defense](https://www.ericsson.com/en/industries/defense/drone-detection-isac).
-2. N. Decarli, S. Bartoletti, A. Bazzi, R. A. Stirling-Gallacher, and B. M. Masini, “Performance Characterization of Joint Communication and Sensing With Beyond 5G NR-V2X Sidelink,” *IEEE Transactions on Vehicular Technology*, 2024. DOI: [10.1109/TVT.2024.3365770](https://doi.org/10.1109/TVT.2024.3365770).
-3. Z. Li, P. Wang, Y. Shen, and S. Li, “Reinforcement Learning-Based Resource Allocation Scheme of NR-V2X Sidelink for Joint Communication and Sensing,” *Sensors*, 2025. DOI: [10.3390/s25020302](https://doi.org/10.3390/s25020302).
-4. ETSI EN 302 663 V1.3.1, [ITS-G5 Access Layer Specification](https://www.etsi.org/deliver/etsi_en/302600_302699/302663/01.03.01_60/en_302663v010301p.pdf), 2020.
-5. A. D. Singh et al., “Depth Estimation from Camera Image and mmWave Radar Point Cloud,” *CVPR*, 2023. Used here to distinguish dedicated radar-plus-camera depth fusion from this RF-only experiment.
-6. Y. Wang et al., “TacoDepth: Towards Efficient Radar-Camera Depth Estimation with One-stage Fusion,” *CVPR*, 2025. Used here to distinguish dedicated radar-plus-camera depth fusion from this RF-only experiment.
-
----
+2. N. Decarli, S. Bartoletti, A. Bazzi, R. A. Stirling-Gallacher, and B. M. Masini, “[Performance Characterization of Joint Communication and Sensing With Beyond 5G NR-V2X Sidelink](https://doi.org/10.1109/TVT.2024.3365770),” *IEEE Transactions on Vehicular Technology*, 2024.
+3. Z. Li, P. Wang, Y. Shen, and S. Li, “[Reinforcement Learning-Based Resource Allocation Scheme of NR-V2X Sidelink for Joint Communication and Sensing](https://doi.org/10.3390/s25020302),” *Sensors*, 2025.
+4. ETSI, [ITS-G5 Access Layer Specification — EN 302 663 V1.3.1](https://www.etsi.org/deliver/etsi_en/302600_302699/302663/01.03.01_60/en_302663v010301p.pdf), 2020.
+5. A. D. Singh *et al.*, “Depth Estimation from Camera Image and mmWave Radar Point Cloud,” *CVPR*, 2023. Included only for context on dedicated radar and camera fusion.
+6. Y. Wang *et al.*, “TacoDepth: Towards Efficient Radar-Camera Depth Estimation with One-stage Fusion,” *CVPR*, 2025. Included only for context on dedicated radar and camera fusion.
 
 ## Team
 
-- **Repository / team name:** `g14_research_isacv2x_ind`
-- **Project area:** V2X, ITS, SDR, OFDM, ISAC, roadside sensing
+- **Team / repository name:** `g14_research_isacv2x_ind`
+- **Research focus:** V2X, OFDM, SDR, RF-only ISAC, roadside sensing
 - **Paper target:** 18 November 2026
-
----
 
 ## License
 
-Add a project license before public release. Until then, all rights are reserved by the project team and affiliated institution.
+Add an explicit repository license before public release. Until then, permissions for reuse should not be assumed.
