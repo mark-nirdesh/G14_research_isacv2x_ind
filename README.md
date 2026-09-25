@@ -28,7 +28,7 @@
 If the repository viewer does not render the iframe, add a normal Loom link here:
 
 ```text
-https://www.loom.com/share/YOUR_VIDEO_ID
+https://www.loom.com/share/YOUR_VIDEO_ID](https://www.loom.com/share/ca03f628b9004216a871881f3888bf60
 ```
 
 ---
