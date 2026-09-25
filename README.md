@@ -92,15 +92,22 @@ USRP B210 #1: transmit + sensing RX                  PER / goodput
 
 ## Mathematical signal model
 
-Let $X[m,n]$ be the known OFDM symbol at OFDM time index $m$ and subcarrier index $n$. The first-order receive model is:
+## Mathematical signal model
 
-$$
-Y[m,n] = X[m,n]\left(
-H_{\mathrm{leak}}[m,n] + H_{\mathrm{static}}[m,n]
+Let $X[m,n]$ be the known OFDM symbol at time index $m$ and subcarrier index $n$. The received signal contains direct transmitter leakage, static reflections, a moving-target echo, and noise:
+
+```math
+Y[m,n] =
+X[m,n]\left(
+H_{\mathrm{leak}}[m,n]
++ H_{\mathrm{static}}[m,n]
 + \alpha e^{-j2\pi n\Delta f\tau}
-  e^{j2\pi mT_{\mathrm{sym}}f_D}
-\right) + W[m,n].
-$$
+         e^{j2\pi mT_{\mathrm{sym}}f_D}
+\right)
++ W[m,n].
+```
+
+Here, $\tau$ is the target echo delay and $f_D$ is its Doppler shift.
 
 Here $H_{\mathrm{leak}}$ is direct transmitter-to-receiver leakage; $H_{\mathrm{static}}$ represents static clutter; $\alpha$ is complex target reflectivity; $\tau$ is round-trip propagation delay; $f_D$ is Doppler frequency; and $W$ includes noise and residual interference. This is an initial model: the experiment must determine whether synchronization error, receiver clipping, phase noise, and multipath limit its usefulness.
 
